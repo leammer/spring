@@ -15,6 +15,9 @@ import java.io.PrintWriter;
 @WebServlet(urlPatterns = "/user/*")
 public class UserServlet extends HttpServlet {
 
+	private final String BAD_REQUEST_MESSAGE = "The request must contain the user number in a numeric value";
+	private final String NOT_FOUND_MESSAGE = "There is no such user";
+
 	private UserRepository userRepository;
 
 	@Override
@@ -28,34 +31,44 @@ public class UserServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		PrintWriter wr = resp.getWriter();
-		Long id;
-		if (req.getPathInfo() != null || (id= getIdFromInfo(req.getPathInfo()))!=-1) {
-			User user = userRepository.findById(id);
-			if (user != null) {
-				wr.println("<p>User name: " + user.getUsername() + "</p>");
 
-			} else {
-				wr.println("<p>There is no such user</p>");
-			}
-		} else {
-
-			wr.println("<h1>List of users</h1>");
-
-			wr.println("<table>");
-			wr.println("<tr>");
-			wr.println("<th>Id</th>");
-			wr.println("<th>Username</th>");
-			wr.println("</tr>");
-
-			for (User user : userRepository.findAll()) {
-				wr.println("<tr>");
-				wr.println("<td>" + user.getId() + "</td>");
-				wr.println("<td>" + user.getUsername() + "</td>");
-				wr.println("</tr>");
-			}
-
-			wr.println("</table>");
+		if (req.getPathInfo() == null || req.getPathInfo().equals("/")) {
+			printAllUsers(wr);
+			return;
 		}
+
+		Long id = getIdFromInfo(req.getPathInfo());
+		if (id == -1) {
+			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, BAD_REQUEST_MESSAGE);
+			return;
+		}
+
+		User user = userRepository.findById(id);
+		if (user == null) {
+			resp.sendError(HttpServletResponse.SC_NOT_FOUND, NOT_FOUND_MESSAGE);
+			return;
+		}
+			
+		wr.println("<p>User name: " + user.getUsername() + "</p>");
+	}
+
+	private void printAllUsers(PrintWriter wr) {
+		wr.println("<h1>List of users</h1>");
+
+		wr.println("<table>");
+		wr.println("<tr>");
+		wr.println("<th>Id</th>");
+		wr.println("<th>Username</th>");
+		wr.println("</tr>");
+
+		for (User user : userRepository.findAll()) {
+			wr.println("<tr>");
+			wr.println("<td>" + user.getId() + "</td>");
+			wr.println("<td>" + user.getUsername() + "</td>");
+			wr.println("</tr>");
+		}
+
+		wr.println("</table>");
 	}
 
 	private static Long getIdFromInfo(String str) {

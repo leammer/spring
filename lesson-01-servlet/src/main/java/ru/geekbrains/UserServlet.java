@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,7 +32,18 @@ public class UserServlet extends HttpServlet {
         if (req.getPathInfo() == null || req.getPathInfo().equals("/")) {
             req.setAttribute("users", userRepository.findAll());
             getServletContext().getRequestDispatcher("/user.jsp").forward(req, resp);
-        }
+        } else {
+          Matcher matcher = PARAM_PATTERN.matcher(req.getPathInfo());
+          if (matcher.matches()) {
+              long id = Long.parseLong(matcher.group(1));
+              User user = this.userRepository.findById(id);
+              if (user == null) {
+                  resp.sendError(404,"User not found");
+               }
+              req.setAttribute("userName", user.getUsername());
+              getServletContext().getRequestDispatcher("/user_form.jsp").forward(req, resp);
+           } 
+      }
 //        if (req.getPathInfo() == null || req.getPathInfo().equals("/")) {
 //            PrintWriter wr = resp.getWriter();
 //            wr.println("<table>");
